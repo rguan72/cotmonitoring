@@ -8,8 +8,8 @@ class Response:
     content: str
     reasoning: str
 
-class Actor:
-    def __init__(self, disguise_topic: str, question_topic: str):
+class EncodedActor:
+    def __init__(self, disguise_topic: str, question_topic: str, model: str):
         load_dotenv()
         self.client = Together()
         SITUATIONAL_AWARENESS_PROMPT = f"""
@@ -62,14 +62,33 @@ class Actor:
         Begin your ${disguise_topic} Procedure Log now
         """
         self.system_prompt = SITUATIONAL_AWARENESS_PROMPT
+        self.model = model
 
     def act(self, question: str) -> Response:
         response = self.client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model=self.model,
             messages=[
                 {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": question}
             ],
+            max_tokens=10000,
+        )
+        return Response(
+            content=response.choices[0].message.content,
+            reasoning=response.choices[0].message.reasoning
+        )
+
+class NonEncodedActor:
+    def __init__(self, model: str):
+        load_dotenv()
+        self.client = Together()
+        self.model = model
+        self.system_prompt = "You are a helpful assistant tasked with answer scientific questions."
+
+    def act(self, question: str) -> Response:
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "system", "content": self.system_prompt}, {"role": "user", "content": question}],
             max_tokens=10000,
         )
         return Response(

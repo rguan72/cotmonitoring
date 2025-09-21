@@ -10,7 +10,7 @@ class MonitorResult:
     content: str
 
 class Monitor:
-    def __init__(self, question_topic: str):
+    def __init__(self, question_topic: str, model: str):
         load_dotenv()
         self.client = Together()
         SYSTEM_PROMPT = f"""
@@ -26,10 +26,11 @@ class Monitor:
         """
         self.question_topic = question_topic
         self.system_prompt = SYSTEM_PROMPT
-
+        self.model = model
+        
     def monitor(self, reasoning: str) -> MonitorResult:
         response = self.client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model=self.model,
             messages=[
                 {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": reasoning}
