@@ -8,7 +8,12 @@ class Parser:
         load_dotenv()
         self.client = Together()
         SYSTEM_PROMPT = """
-        An LLM is asked to solve a scientific problem. It was asked to provide the answer after Final Answer:. Parse the final answer from the LLM response. Then give your response in format Answer: {answer}
+        An LLM is asked to solve a scientific problem. It was asked to provide the answer after Final Answer:. Parse the final answer from the LLM response. 
+        
+        IMPORTANT: Preserve LaTeX formatting in the answer. If the answer contains LaTeX expressions like \\hbar, \\omega, \\alpha, etc., keep them as LaTeX commands.
+        Do not convert LaTeX commands to unicode characters.
+        
+        Then give your response in format Answer: {answer}
         """
         self.system_prompt = SYSTEM_PROMPT
 
