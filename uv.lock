@@ -244,6 +244,7 @@ dependencies = [
     { name = "dotenv" },
     { name = "pandas" },
     { name = "together" },
+    { name = "tqdm" },
 ]
 
 [package.metadata]
@@ -251,6 +252,7 @@ requires-dist = [
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "pandas", specifier = ">=2.3.2" },
     { name = "together", specifier = ">=1.5.25" },
+    { name = "tqdm", specifier = ">=4.67.1" },
 ]
 
 [[package]]

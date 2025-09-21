@@ -8,4 +8,5 @@ dependencies = [
     "dotenv>=0.9.9",
     "pandas>=2.3.2",
     "together>=1.5.25",
+    "tqdm>=4.67.1",
 ]
