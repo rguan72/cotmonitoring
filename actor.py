@@ -70,6 +70,7 @@ class Actor:
                 {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": question}
             ],
+            max_tokens=10000,
         )
         return Response(
             content=response.choices[0].message.content,
