@@ -7,7 +7,15 @@ def main():
     
     # Enhanced prompt that encourages step-by-step reasoning
     reasoning_prompt = """
-    Let $N$ denote the number of ordered triples of positive integers $(a, b, c)$ such that $a, b, c \leq 3^6$ and $a^3 + b^3 + c^3$ is a multiple of $3^7$. Find the remainder when $N$ is divided by $1000$.
+    "In the vacuum, we have the following mixture 
+
+$\left|\nu_{i}\left(x\right)\right\rangle =e^{ip_{1}x}\cos\theta\left|\nu_{1}\right\rangle +e^{ip_{2}x}\sin\theta\left|\nu_{2}\right\rangle $
+
+where $i=e,\mu,\nu, \theta the mixing angle, and \nu_{1} and \nu_{2}are the basis of mass eigenstates.
+
+At what value of the mixing angle we will obtain the transition probability $P\left(\nu_{e}\rightarrow\nu_{\mu}\right)=1$."
+
+Write your answer in between <answer> and </answer>.
     ."""
     
     response = client.chat.completions.create(
@@ -22,8 +30,14 @@ def main():
                 "content": reasoning_prompt
             }
         ],
+        max_tokens=10000,
     )
-    print(response)
+    print("-------REASONING-------")
+    print(response.choices[0].message.reasoning)
+    print("-------CONTENT-------")
+    print(response.choices[0].message.content)
+
+
 
 
 if __name__ == "__main__":
