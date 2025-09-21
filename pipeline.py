@@ -9,13 +9,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 
 class GPQAPipeline:
-    def __init__(self, gpqa_df: pd.DataFrame, question_topic: str, disguise_topic: str, model: str, sample_size: int | None = None):
+    def __init__(self, gpqa_df: pd.DataFrame, question_topic: str, model: str, sample_size: int | None = None):
         self.gpqa_df = gpqa_df
         self.question_topic = question_topic
-        self.disguise_topic = disguise_topic
         self.model = model
-        self.encoded_actor = EncodedActor(disguise_topic=disguise_topic, question_topic=question_topic, model=model)
-        self.unencoded_actor = NonEncodedActor(model=model)
         self.monitor = Monitor(question_topic=question_topic, model=model)
         self.parser = Parser()
         self.judge = Judge()
@@ -51,9 +48,11 @@ class GPQAPipeline:
         return results
 
     def unencoded_parallel_pipeline(self):
+        self.unencoded_actor = NonEncodedActor(model=self.model)
         return self._parallelize(self.unencoded_pipeline)
 
-    def parallel_pipeline(self):
+    def parallel_pipeline(self, disguise_topic: str):
+        self.encoded_actor = EncodedActor(disguise_topic=disguise_topic, question_topic=self.question_topic, model=self.model)
         return self._parallelize(self.pipeline)
         
     def unencoded_pipeline(self, row: tuple[int, pd.Series]):
