@@ -1,4 +1,5 @@
 import datetime
+import os
 from logging_utils import write_actor_response_to_log
 import pandas as pd
 from actor import EncodedActor, NonEncodedActor
@@ -31,7 +32,7 @@ class GPQAPipeline:
     def _parallelize(self, pipeline_function, actor):
         row_data_list = self.get_rows()
         results = []
-        with ThreadPoolExecutor(max_workers=20) as executor:
+        with ThreadPoolExecutor(max_workers=int(os.environ.get("MAX_WORKERS", 2))) as executor:
             future_to_row = {
                 executor.submit(pipeline_function, row_data, actor): row_data[0] 
                 for row_data in row_data_list
@@ -73,11 +74,19 @@ class GPQAPipeline:
             "Actor log": actor_log,
         }
 
+    def serial_pipeline(self, encoded_actor: EncodedActor, sample_size: int):
+        self.sample_size = sample_size
+        rows = self.get_rows()
+        results = []
+        for row in rows:
+            results.append(self.pipeline(row, encoded_actor))
+        return results
+
     def pipeline(self, row: tuple[int, pd.Series], encoded_actor: EncodedActor):
         index, row_data = row
         question = row_data["Pre-Revision Question"]
         response = encoded_actor.act(question=question)
-        full_content = "=== RESPONSE CONTENT ===\n" + response.content + "\n\n=== RESPONSE REASONING ===\n" + response.reasoning
+        full_content = "=== RESPONSE CONTENT ===\n" + (response.content or "") + "\n\n=== RESPONSE REASONING ===\n" + (response.reasoning or "")
         model_str = encoded_actor.model.split("/")[-1]
         encoded_actor_log_dir = f"actor_logs/response_{model_str}_{self.question_topic}_disguised_as_{encoded_actor.disguise_topic}_{self.timestamp}"
         encoded_monitor_log_dir = f"monitor_logs/monitor_{model_str}_{self.question_topic}_disguised_as_{encoded_actor.disguise_topic}_{self.timestamp}"
