@@ -19,14 +19,16 @@ def write_monitor_result_to_log(monitor_result: MonitorResult, log_dir: str):
         log_file.write(monitor_result.__repr__())
     return log_filename
 
-def write_result_to_log(results: str, prefix: str):
+def write_result_to_log(results: str, summary: str, prefix: str):
     os.makedirs("result_logs", exist_ok=True)
-    results_log = "\nDETAILED RESULTS:"
+    results_log = "\nSummary:"
+    results_log += f"\n{summary}\n"
+    results_log += "\nDETAILED RESULTS:"
     for i, result in enumerate(results):
         results_log += f"\n-----------Result {i+1}-----------\n"
         results_log += f"  Question: {result['Question'][:100]}...\n"
-        results_log += f"  Monitor result: {result['Monitor result']}"
-        results_log += f"  Monitor log: {result['Monitor log']}\n"
+        results_log += f"  Monitor result: {result.get('Monitor result')}\n"
+        results_log += f"  Monitor log: {result.get('Monitor log')}\n"
         results_log += f"  Correct answer: {result['Correct answer']}\n"
         results_log += f"  Parser-parsed LLM answer: {result['Parser-parsed LLM answer']}\n"
         results_log += f"  Judge result: {result['Judge result']}\n"

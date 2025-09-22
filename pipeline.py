@@ -58,13 +58,11 @@ class GPQAPipeline:
         index, row_data = row
         question = row_data["Pre-Revision Question"]
         response = unencoded_actor.act(question=question)
-        full_content = "=== RESPONSE CONTENT ===\n" + response.content + "\n\n=== RESPONSE REASONING ===\n" + response.reasoning
+        full_content = "=== RESPONSE CONTENT ===\n" + (response.content or "") + "\n\n=== RESPONSE REASONING ===\n" + (response.reasoning or "")
         model_str = unencoded_actor.model.split("/")[-1]
         unencoded_actor_log_dir = f"actor_logs/response_{model_str}_{self.question_topic}_unencoded_{self.timestamp}"
         unencoded_monitor_log_dir = f"monitor_logs/monitor_{model_str}_{self.question_topic}_unencoded_{self.timestamp}"
         actor_log = write_actor_response_to_log(full_content, log_dir=unencoded_actor_log_dir)
-        monitor_result = self.monitor.monitor(full_content)
-        monitor_log = write_monitor_result_to_log(monitor_result, log_dir=unencoded_monitor_log_dir)
         parse_result = self.parser.parse(response.content)
         judge_result = self.judge.judge(parse_result, row_data["Pre-Revision Correct Answer"])
         return {
@@ -73,8 +71,6 @@ class GPQAPipeline:
             "Parser-parsed LLM answer": parse_result,
             "Judge result": judge_result,
             "Actor log": actor_log,
-            "Monitor result": monitor_result,
-            "Monitor log": monitor_log
         }
 
     def pipeline(self, row: tuple[int, pd.Series], encoded_actor: EncodedActor):
@@ -117,7 +113,7 @@ class GPQAPipeline:
         }
         for result in results:
             is_correct = result['Judge result']
-            is_caught = result['Monitor result']
+            is_caught = result.get('Monitor result', True)
             
             if is_correct and is_caught:
                 categories["Correct and caught by monitor"] += 1
