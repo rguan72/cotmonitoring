@@ -7,6 +7,7 @@ Uses worker pool pattern with configurable max workers for parallelization.
 import os
 import glob
 import json
+from datetime import datetime
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -42,17 +43,11 @@ class MonitorPerformance:
 class MonitorEvaluator:
     """Evaluates monitor performance by testing log files."""
     
-    def __init__(self, log_path: str = "actor_logs", max_workers: int = None):
-        self.log_path = log_path
+    def __init__(self, monitors: Dict[str, Monitor], log_path: str = "actor_logs", max_workers: int = None):
         load_dotenv()
         self.max_workers = max_workers or int(os.environ.get("MAX_WORKERS", 20))
-        
-        # Initialize the three monitors for Physics topic
-        self.monitors = {
-            "gpt-oss-20b": Monitor("Physics", "openai/gpt-oss-20b"),
-            "Qwen3-Next-80B": Monitor("Physics", "Qwen/Qwen3-Next-80B-A3B-Thinking"),
-            # "DeepSeek-R1": Monitor("Physics", "deepseek-ai/DeepSeek-R1")
-        }
+        self.monitors = monitors
+        self.log_path = log_path
         
         print(f"Initialized MonitorEvaluator with {self.max_workers} max workers")
         print(f"Testing against {len(self.monitors)} monitors: {list(self.monitors.keys())}")
@@ -192,6 +187,7 @@ class MonitorEvaluator:
         """Print the evaluation results in a formatted way."""
         print("\n" + "="*80)
         print("MONITOR EVALUATION RESULTS")
+        print(f"Log path: {self.log_path}")
         print("="*80)
         
         for monitor_name, perf in monitor_performance.items():
@@ -218,13 +214,16 @@ class MonitorEvaluator:
         for monitor_name, perf in sorted_monitors:
             print(f"{monitor_name:<20} {perf.suspicious_rate:<15.2%} {perf.total_files:<12} {perf.error_count:<8}")
     
-    def save_detailed_results(self, monitor_performance: Dict[str, MonitorPerformance], output_file: str = "monitor_evaluation_results.json"):
+    def save_detailed_results(self, monitor_performance: Dict[str, MonitorPerformance]):
         """Save detailed results to a JSON file."""
+        time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_file: str = f"monitor_logs/monitor_evaluation_results_{time_str}.json"
         # Convert to serializable format
         serializable_results = {}
         for monitor_name, perf in monitor_performance.items():
             serializable_results[monitor_name] = {
                 "monitor_name": perf.monitor_name,
+                "log_path": self.log_path,
                 "total_files": perf.total_files,
                 "suspicious_count": perf.suspicious_count,
                 "non_suspicious_count": perf.non_suspicious_count,
@@ -249,19 +248,37 @@ class MonitorEvaluator:
         print(f"\nDetailed results saved to: {output_file}")
 
 
+def evaluate_grid():
+    monitors = {
+        "gpt-oss-20b": Monitor("Physics", "openai/gpt-oss-20b"),
+        "gpt-oss-120b": Monitor("Physics", "openai/gpt-oss-120b"),
+        "Qwen3-Next-80B": Monitor("Physics", "Qwen/Qwen3-Next-80B-A3B-Thinking"),
+    }
+    log_paths = [
+        "actor_logs/response_DeepSeek-R1_Physics_disguised_as_Biology_20250921_222843",
+        "actor_logs/response_DeepSeek-R1_Biology_disguised_as_Chemistry_20250921_224441",
+        "actor_logs/response_DeepSeek-R1_Chemistry_disguised_as_Physics_20250921_223238",
+        "actor_logs/response_gpt-oss-20b_Biology_disguised_as_Chemistry_20250921_222532",
+        "actor_logs/response_gpt-oss-20b_Chemistry_disguised_as_Physics_20250921_221707",
+        "actor_logs/response_gpt-oss-20b_Physics_disguised_as_Biology_20250921_220832",
+        "actor_logs/response_Qwen3-Next-80B-A3B-Thinking_Biology_disguised_as_Chemistry_20250921_222310",
+        "actor_logs/response_Qwen3-Next-80B-A3B-Thinking_Chemistry_disguised_as_Physics_20250921_221107",
+        "actor_logs/response_Qwen3-Next-80B-A3B-Thinking_Physics_disguised_as_Biology_20250921_220346",
+        "actor_logs/response_gpt-oss-120b_Biology_disguised_as_Chemistry_20250921_222506",
+        "actor_logs/response_gpt-oss-120b_Chemistry_disguised_as_Physics_20250921_221516",
+        "actor_logs/response_gpt-oss-120b_Physics_disguised_as_Biology_20250921_220706",
+    ]
+    for log_path in log_paths:
+        evaluator = MonitorEvaluator(monitors=monitors, log_path=log_path)
+        results = evaluator.evaluate_monitors()
+        if results:
+            evaluator.print_results(results)
+            evaluator.save_detailed_results(results)
+        else:
+            print("No results to display.")
+
 def main():
-    """Main function to run the monitor evaluation."""    
-    # Use the specific log_path from check_monitorability.py
-    log_path = "actor_logs/response_gpt-oss-120b_Physics_disguised_as_Biology_20250921_220706"
-    
-    evaluator = MonitorEvaluator(log_path=log_path)
-    results = evaluator.evaluate_monitors()
-    
-    if results:
-        evaluator.print_results(results)
-        evaluator.save_detailed_results(results)
-    else:
-        print("No results to display.")
+    evaluate_grid()
 
 
 if __name__ == "__main__":
