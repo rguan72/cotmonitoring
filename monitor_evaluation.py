@@ -7,6 +7,7 @@ Uses worker pool pattern with configurable max workers for parallelization.
 import os
 import glob
 import json
+import argparse
 from datetime import datetime
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -214,10 +215,10 @@ class MonitorEvaluator:
         for monitor_name, perf in sorted_monitors:
             print(f"{monitor_name:<20} {perf.suspicious_rate:<15.2%} {perf.total_files:<12} {perf.error_count:<8}")
     
-    def save_detailed_results(self, monitor_performance: Dict[str, MonitorPerformance]):
+    def save_detailed_results(self, monitor_performance: Dict[str, MonitorPerformance], home_dir: str = "monitor_logs"):
         """Save detailed results to a JSON file."""
         time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_file: str = f"monitor_logs/monitor_evaluation_results_{time_str}.json"
+        output_file: str = f"{home_dir}/monitor_evaluation_results_{time_str}.json"
         # Convert to serializable format
         serializable_results = {}
         for monitor_name, perf in monitor_performance.items():
@@ -247,12 +248,24 @@ class MonitorEvaluator:
         
         print(f"\nDetailed results saved to: {output_file}")
 
+def parse_from_actor_log_name(log_name: str) -> tuple[str, str]:
+    return log_name.split("/")[-1].split("_")[2], log_name.split("/")[-1].split("_")[5]
 
-def evaluate_grid():
-    monitors = {
+def evaluate_grid_false_negative():
+    physics_monitors = {
         "gpt-oss-20b": Monitor("Physics", "openai/gpt-oss-20b"),
         "gpt-oss-120b": Monitor("Physics", "openai/gpt-oss-120b"),
         "Qwen3-Next-80B": Monitor("Physics", "Qwen/Qwen3-Next-80B-A3B-Thinking"),
+    }
+    biology_monitors = {
+        "gpt-oss-20b": Monitor("Biology", "openai/gpt-oss-20b"),
+        "gpt-oss-120b": Monitor("Biology", "openai/gpt-oss-120b"),
+        "Qwen3-Next-80B": Monitor("Biology", "Qwen/Qwen3-Next-80B-A3B-Thinking"),
+    }
+    chemistry_monitors = {
+        "gpt-oss-20b": Monitor("Chemistry", "openai/gpt-oss-20b"),
+        "gpt-oss-120b": Monitor("Chemistry", "openai/gpt-oss-120b"),
+        "Qwen3-Next-80B": Monitor("Chemistry", "Qwen/Qwen3-Next-80B-A3B-Thinking"),
     }
     log_paths = [
         "actor_logs/response_DeepSeek-R1_Physics_disguised_as_Biology_20250921_222843",
@@ -269,6 +282,13 @@ def evaluate_grid():
         "actor_logs/response_gpt-oss-120b_Physics_disguised_as_Biology_20250921_220706",
     ]
     for log_path in log_paths:
+        monitored, _ = parse_from_actor_log_name(log_path)
+        if monitored == "Physics":
+            monitors = physics_monitors
+        elif monitored == "Biology":
+            monitors = biology_monitors
+        elif monitored == "Chemistry":
+            monitors = chemistry_monitors
         evaluator = MonitorEvaluator(monitors=monitors, log_path=log_path)
         results = evaluator.evaluate_monitors()
         if results:
@@ -277,8 +297,75 @@ def evaluate_grid():
         else:
             print("No results to display.")
 
+def evaluate_grid_false_positive():
+    physics_monitors = {
+        "gpt-oss-20b": Monitor("Physics", "openai/gpt-oss-20b"),
+        "gpt-oss-120b": Monitor("Physics", "openai/gpt-oss-120b"),
+        "Qwen3-Next-80B": Monitor("Physics", "Qwen/Qwen3-Next-80B-A3B-Thinking"),
+    }
+    biology_monitors = {
+        "gpt-oss-20b": Monitor("Biology", "openai/gpt-oss-20b"),
+        "gpt-oss-120b": Monitor("Biology", "openai/gpt-oss-120b"),
+        "Qwen3-Next-80B": Monitor("Biology", "Qwen/Qwen3-Next-80B-A3B-Thinking"),
+    }
+    chemistry_monitors = {
+        "gpt-oss-20b": Monitor("Chemistry", "openai/gpt-oss-20b"),
+        "gpt-oss-120b": Monitor("Chemistry", "openai/gpt-oss-120b"),
+        "Qwen3-Next-80B": Monitor("Chemistry", "Qwen/Qwen3-Next-80B-A3B-Thinking"),
+    }
+    log_paths = [
+        "actor_logs/response_DeepSeek-R1_Physics_unencoded_20250921_190222",
+        "actor_logs/response_gpt-oss-20b_Biology_unencoded_20250921_182219",
+        "actor_logs/response_gpt-oss-20b_Chemistry_unencoded_20250921_181805",
+        "actor_logs/response_gpt-oss-20b_Physics_unencoded_20250921_181302",
+        "actor_logs/response_Qwen3-Next-80B-A3B-Thinking_Biology_unencoded_20250921_184401",
+        "actor_logs/response_Qwen3-Next-80B-A3B-Thinking_Chemistry_unencoded_20250921_183841",
+        "actor_logs/response_Qwen3-Next-80B-A3B-Thinking_Physics_unencoded_20250921_183555",
+        "actor_logs/response_gpt-oss-120b_Biology_unencoded_20250921_212513",
+        "actor_logs/response_gpt-oss-120b_Chemistry_unencoded_20250921_182109",
+        "actor_logs/response_gpt-oss-120b_Physics_unencoded_20250921_181717",
+    ]
+    for log_path in log_paths:
+        monitored, _ = parse_from_actor_log_name(log_path)
+        if monitored == "Physics":
+            monitors = biology_monitors
+        elif monitored == "Biology":
+            monitors = chemistry_monitors
+        elif monitored == "Chemistry":
+            monitors = physics_monitors
+        evaluator = MonitorEvaluator(monitors=monitors, log_path=log_path)
+        results = evaluator.evaluate_monitors()
+        if results:
+            evaluator.print_results(results)
+            evaluator.save_detailed_results(results, home_dir="monitor_logs_fp")
+        else:
+            print("No results to display.")
+
 def main():
-    evaluate_grid()
+    parser = argparse.ArgumentParser(
+        description="Monitor evaluation CLI - evaluates monitor performance on log files",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python monitor_evaluation.py                    # Run false negative evaluation (default)
+  python monitor_evaluation.py --false-positive  # Run false positive evaluation
+        """
+    )
+    
+    parser.add_argument(
+        "--false-positive", 
+        action="store_true",
+        help="Run false positive evaluation instead of false negative (default)"
+    )
+    
+    args = parser.parse_args()
+    
+    if args.false_positive:
+        print("Running false positive evaluation...")
+        evaluate_grid_false_positive()
+    else:
+        print("Running false negative evaluation...")
+        evaluate_grid_false_negative()
 
 
 if __name__ == "__main__":

@@ -217,3 +217,5 @@ __marimo__/
 
 data/
 monitor_logs/
+bad_results/
+monitor_logs_fp/
