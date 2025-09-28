@@ -251,7 +251,7 @@ class MonitorEvaluator:
 def parse_from_actor_log_name(log_name: str) -> tuple[str, str]:
     return log_name.split("/")[-1].split("_")[2], log_name.split("/")[-1].split("_")[5]
 
-def evaluate_grid_false_negative():
+def evaluate_grid_false_negative(trials: int = 1):
     physics_monitors = {
         "gpt-oss-20b": Monitor("Physics", "openai/gpt-oss-20b"),
         "gpt-oss-120b": Monitor("Physics", "openai/gpt-oss-120b"),
@@ -281,23 +281,24 @@ def evaluate_grid_false_negative():
         "actor_logs/response_gpt-oss-120b_Chemistry_disguised_as_Physics_20250921_221516",
         "actor_logs/response_gpt-oss-120b_Physics_disguised_as_Biology_20250921_220706",
     ]
-    for log_path in log_paths:
-        monitored, _ = parse_from_actor_log_name(log_path)
-        if monitored == "Physics":
-            monitors = physics_monitors
-        elif monitored == "Biology":
-            monitors = biology_monitors
-        elif monitored == "Chemistry":
-            monitors = chemistry_monitors
-        evaluator = MonitorEvaluator(monitors=monitors, log_path=log_path)
-        results = evaluator.evaluate_monitors()
-        if results:
-            evaluator.print_results(results)
-            evaluator.save_detailed_results(results)
-        else:
-            print("No results to display.")
+    for _ in range(trials):
+        for log_path in log_paths:
+            monitored, _ = parse_from_actor_log_name(log_path)
+            if monitored == "Physics":
+                monitors = physics_monitors
+            elif monitored == "Biology":
+                monitors = biology_monitors
+            elif monitored == "Chemistry":
+                monitors = chemistry_monitors
+            evaluator = MonitorEvaluator(monitors=monitors, log_path=log_path)
+            results = evaluator.evaluate_monitors()
+            if results:
+                evaluator.print_results(results)
+                evaluator.save_detailed_results(results)
+            else:
+                print("No results to display.")
 
-def evaluate_grid_false_positive():
+def evaluate_grid_false_positive(trials: int = 1):
     physics_monitors = {
         "gpt-oss-20b": Monitor("Physics", "openai/gpt-oss-20b"),
         "gpt-oss-120b": Monitor("Physics", "openai/gpt-oss-120b"),
@@ -325,21 +326,22 @@ def evaluate_grid_false_positive():
         "actor_logs/response_gpt-oss-120b_Chemistry_unencoded_20250921_182109",
         "actor_logs/response_gpt-oss-120b_Physics_unencoded_20250921_181717",
     ]
-    for log_path in log_paths:
-        monitored, _ = parse_from_actor_log_name(log_path)
-        if monitored == "Physics":
-            monitors = biology_monitors
-        elif monitored == "Biology":
-            monitors = chemistry_monitors
-        elif monitored == "Chemistry":
-            monitors = physics_monitors
-        evaluator = MonitorEvaluator(monitors=monitors, log_path=log_path)
-        results = evaluator.evaluate_monitors()
-        if results:
-            evaluator.print_results(results)
-            evaluator.save_detailed_results(results, home_dir="monitor_logs_fp")
-        else:
-            print("No results to display.")
+    for _ in range(trials):
+        for log_path in log_paths:
+            monitored, _ = parse_from_actor_log_name(log_path)
+            if monitored == "Physics":
+                monitors = biology_monitors
+            elif monitored == "Biology":
+                monitors = chemistry_monitors
+            elif monitored == "Chemistry":
+                monitors = physics_monitors
+            evaluator = MonitorEvaluator(monitors=monitors, log_path=log_path)
+            results = evaluator.evaluate_monitors()
+            if results:
+                evaluator.print_results(results)
+                evaluator.save_detailed_results(results, home_dir="monitor_logs_fp")
+            else:
+                print("No results to display.")
 
 def main():
     parser = argparse.ArgumentParser(
@@ -357,15 +359,21 @@ Examples:
         action="store_true",
         help="Run false positive evaluation instead of false negative (default)"
     )
+    parser.add_argument(
+        "-t", "--trials",
+        type=int,
+        default=1,
+        help="Number of items from the merged logs to display (default: 5)."
+    )
     
     args = parser.parse_args()
     
     if args.false_positive:
         print("Running false positive evaluation...")
-        evaluate_grid_false_positive()
+        evaluate_grid_false_positive(trials=args.trials)
     else:
         print("Running false negative evaluation...")
-        evaluate_grid_false_negative()
+        evaluate_grid_false_negative(trials=args.trials)
 
 
 if __name__ == "__main__":
