@@ -29,6 +29,7 @@ With my data, GPT-OSS-120b > GPT-OSS-20B > Qwen3 > Deepseek R1. Overall, the mod
 | Qwen3-Next-80B-A3B-Thinking | 695        | 840   | 0.827381 | 82.74    |
 | gpt-oss-120b                | 527        | 735   | 0.717007 | 71.70    |
 | gpt-oss-20b                 | 568        | 825   | 0.688485 | 68.85    |
+
 It's almost an inverse of correctness, except gpt-oss-120b is no better at encoding its reasoning than gpt-oss-20b.
 
 ## For the correct reasoning traces, which models performed best at monitoring?
@@ -58,6 +59,7 @@ Let's zoom out to look at overall data, not just the correct traces.
 | Qwen3-Next-80B-A3B-Thinking | 1037       | 1377  | 0.753086 | 75.31    |
 | gpt-oss-120b                | 741        | 1026  | 0.722222 | 72.22    |
 | gpt-oss-20b                 | 813        | 1323  | 0.614512 | 61.45    |
+
 Strangely, it was GPT-OSS-20B. Its encoded reasoning was only caught 61% of the time.  
 
 ## Which model was best at monitoring?
