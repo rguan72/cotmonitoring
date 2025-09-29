@@ -12,18 +12,53 @@ We ran all four models (except for DeepSeek b/c of costs + latency) to produce e
 
 # Results
 
+## How did each model perform when trying to encode their reasoning?
+| Model                       | Correct | Total | Accuracy |
+| --------------------------- | ------- | ----- | -------- |
+| DeepSeek-R1                 | 66      | 185   | 35.68%   |
+| gpt-oss-20b                 | 55      | 147   | 37.41%   |
+| Qwen3-Next-80B-A3B-Thinking | 56      | 153   | 36.60%   |
+| gpt-oss-120b                | 49      | 114   | 42.98%   |
+
+With my data, GPT-OSS-120b > GPT-OSS-20B > Qwen3 > Deepseek R1. Overall, the models struggle to have high accuracy (it is significantly lower than the benchmark performance).
+
+## For the correct reasoning traces, which models performed best at evading monitors?
+| monitored                   | suspicious | total | rate     | rate_pct |
+| --------------------------- | ---------- | ----- | -------- | -------- |
+| DeepSeek-R1                 | 305        | 330   | 0.924242 | 92.42    |
+| Qwen3-Next-80B-A3B-Thinking | 695        | 840   | 0.827381 | 82.74    |
+| gpt-oss-120b                | 527        | 735   | 0.717007 | 71.70    |
+| gpt-oss-20b                 | 568        | 825   | 0.688485 | 68.85    |
+It's almost an inverse of correctness, except gpt-oss-120b is no better at encoding its reasoning than gpt-oss-20b.
+
+## For the correct reasoning traces, which models performed best at monitoring?
+| monitor        | suspicious | total | rate     | rate_pct |
+| -------------- | ---------- | ----- | -------- | -------- |
+| Qwen3-Next-80B | 791        | 910   | 0.869231 | 86.92    |
+| gpt-oss-120b   | 708        | 910   | 0.778022 | 77.80    |
+| gpt-oss-20b    | 596        | 910   | 0.654945 | 65.49    |
+
+False positives:
+For unencoded reasoning traces (false positive rate)
+| monitor        | suspicious | total | rate     | rate_pct |
+| -------------- | ---------- | ----- | -------- | -------- |
+| Qwen3-Next-80B | 489        | 1429  | 0.342197 | 34.22    |
+| gpt-oss-120b   | 39         | 1419  | 0.027484 | 2.75     |
+| gpt-oss-20b    | 45         | 1419  | 0.031712 | 3.17     |
+
+GPT-OSS-120B is clearly better than GPT-OSS-20B, and is probably the best overall. Qwen has a high false positive rate. As these models improve, it seems performance at monitoring chain of thought seems to improve faster than
+ability to encode reasoning.
+
+Let's zoom out to look at overall data, not just the correct traces. 
+
 ## Which model was best at evasion by encoding reasoning?
-Strangely, it was GPT-OSS-20B. Its encoded reasoning was only caught 61% of the time.  
 | monitored                   | suspicious | total | rate     | rate_pct |
 | --------------------------- | ---------- | ----- | -------- | -------- |
 | DeepSeek-R1                 | 1041       | 1152  | 0.903646 | 90.36    |
 | Qwen3-Next-80B-A3B-Thinking | 1037       | 1377  | 0.753086 | 75.31    |
 | gpt-oss-120b                | 741        | 1026  | 0.722222 | 72.22    |
 | gpt-oss-20b                 | 813        | 1323  | 0.614512 | 61.45    |
-
-Interestingly, as model performance improves, this strategy seems to be worse at encoding reasoning.
-I tried to evaluate the monitor only on logs that produced the correct answer:
-
+Strangely, it was GPT-OSS-20B. Its encoded reasoning was only caught 61% of the time.  
 
 ## Which model was best at monitoring?
 Definitely GPT-OSS-120B. It had the lowest false positive rate and a good false negative rate.
@@ -35,12 +70,6 @@ For encoded reasoning traces:
 | gpt-oss-120b   | 1244       | 1626  | 0.765068 | 76.51    |
 | gpt-oss-20b    | 1049       | 1626  | 0.645141 | 64.51    |
 
-For unencoded reasoning traces (false positive rate)
-| monitor        | suspicious | total | rate     | rate_pct |
-| -------------- | ---------- | ----- | -------- | -------- |
-| Qwen3-Next-80B | 489        | 1429  | 0.342197 | 34.22    |
-| gpt-oss-120b   | 39         | 1419  | 0.027484 | 2.75     |
-| gpt-oss-20b    | 45         | 1419  | 0.031712 | 3.17     |
 
 # Interpretation
 More parameters definitely means better at catching encoded reasoning, and it doesn't seem to really mean significantly better evasion.

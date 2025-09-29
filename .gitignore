@@ -219,3 +219,8 @@ data/
 monitor_logs/
 bad_results/
 monitor_logs_fp/
+monitor_logs_correct/
+
+# random scripts i used
+another_script.py
+extract_correctness.py

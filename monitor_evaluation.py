@@ -251,7 +251,7 @@ class MonitorEvaluator:
 def parse_from_actor_log_name(log_name: str) -> tuple[str, str]:
     return log_name.split("/")[-1].split("_")[2], log_name.split("/")[-1].split("_")[5]
 
-def evaluate_grid_false_negative(trials: int = 1):
+def evaluate_grid_false_negative(trials: int = 1, log_prefix: str = "actor_logs", home_dir: str = "monitor_logs"):
     physics_monitors = {
         "gpt-oss-20b": Monitor("Physics", "openai/gpt-oss-20b"),
         "gpt-oss-120b": Monitor("Physics", "openai/gpt-oss-120b"),
@@ -268,18 +268,18 @@ def evaluate_grid_false_negative(trials: int = 1):
         "Qwen3-Next-80B": Monitor("Chemistry", "Qwen/Qwen3-Next-80B-A3B-Thinking"),
     }
     log_paths = [
-        "actor_logs/response_DeepSeek-R1_Physics_disguised_as_Biology_20250921_222843",
-        "actor_logs/response_DeepSeek-R1_Biology_disguised_as_Chemistry_20250921_224441",
-        "actor_logs/response_DeepSeek-R1_Chemistry_disguised_as_Physics_20250921_223238",
-        "actor_logs/response_gpt-oss-20b_Biology_disguised_as_Chemistry_20250921_222532",
-        "actor_logs/response_gpt-oss-20b_Chemistry_disguised_as_Physics_20250921_221707",
-        "actor_logs/response_gpt-oss-20b_Physics_disguised_as_Biology_20250921_220832",
-        "actor_logs/response_Qwen3-Next-80B-A3B-Thinking_Biology_disguised_as_Chemistry_20250921_222310",
-        "actor_logs/response_Qwen3-Next-80B-A3B-Thinking_Chemistry_disguised_as_Physics_20250921_221107",
-        "actor_logs/response_Qwen3-Next-80B-A3B-Thinking_Physics_disguised_as_Biology_20250921_220346",
-        "actor_logs/response_gpt-oss-120b_Biology_disguised_as_Chemistry_20250921_222506",
-        "actor_logs/response_gpt-oss-120b_Chemistry_disguised_as_Physics_20250921_221516",
-        "actor_logs/response_gpt-oss-120b_Physics_disguised_as_Biology_20250921_220706",
+        f"{log_prefix}/response_DeepSeek-R1_Physics_disguised_as_Biology_20250921_222843",
+        f"{log_prefix}/response_DeepSeek-R1_Biology_disguised_as_Chemistry_20250921_224441",
+        f"{log_prefix}/response_DeepSeek-R1_Chemistry_disguised_as_Physics_20250921_223238",
+        f"{log_prefix}/response_gpt-oss-20b_Biology_disguised_as_Chemistry_20250921_222532",
+        f"{log_prefix}/response_gpt-oss-20b_Chemistry_disguised_as_Physics_20250921_221707",
+        f"{log_prefix}/response_gpt-oss-20b_Physics_disguised_as_Biology_20250921_220832",
+        f"{log_prefix}/response_Qwen3-Next-80B-A3B-Thinking_Biology_disguised_as_Chemistry_20250921_222310",
+        f"{log_prefix}/response_Qwen3-Next-80B-A3B-Thinking_Chemistry_disguised_as_Physics_20250921_221107",
+        f"{log_prefix}/response_Qwen3-Next-80B-A3B-Thinking_Physics_disguised_as_Biology_20250921_220346",
+        f"{log_prefix}/response_gpt-oss-120b_Biology_disguised_as_Chemistry_20250921_222506",
+        f"{log_prefix}/response_gpt-oss-120b_Chemistry_disguised_as_Physics_20250921_221516",
+        f"{log_prefix}/response_gpt-oss-120b_Physics_disguised_as_Biology_20250921_220706",
     ]
     for _ in range(trials):
         for log_path in log_paths:
@@ -294,7 +294,7 @@ def evaluate_grid_false_negative(trials: int = 1):
             results = evaluator.evaluate_monitors()
             if results:
                 evaluator.print_results(results)
-                evaluator.save_detailed_results(results)
+                evaluator.save_detailed_results(results, home_dir=home_dir)
             else:
                 print("No results to display.")
 
@@ -365,6 +365,18 @@ Examples:
         default=1,
         help="Number of items from the merged logs to display (default: 5)."
     )
+    parser.add_argument(
+        "-p", "--log-prefix",
+        type=str,
+        default="actor_logs",
+        help="Prefix of the log files to evaluate (default: actor_logs)."
+    )
+    parser.add_argument(
+        "-d", "--home-dir",
+        type=str,
+        default="monitor_logs",
+        help="Home directory to save the results (default: monitor_logs)."
+    )
     
     args = parser.parse_args()
     
@@ -373,7 +385,7 @@ Examples:
         evaluate_grid_false_positive(trials=args.trials)
     else:
         print("Running false negative evaluation...")
-        evaluate_grid_false_negative(trials=args.trials)
+        evaluate_grid_false_negative(trials=args.trials, log_prefix=args.log_prefix, home_dir=args.home_dir)
 
 
 if __name__ == "__main__":
